@@ -6,6 +6,7 @@ import io.github.bucket4j.Bandwidth;
 import io.github.bucket4j.Bucket;
 import io.github.bucket4j.Bucket4j;
 import io.github.bucket4j.Refill;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -13,14 +14,16 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.io.IOException;
 import java.time.Duration;
 import java.util.List;
+import java.util.logging.Logger;
 
 @RestController
 public class WeatherController {
 
     private final Bucket bucket;
-
+    private static final Logger log = Logger.getLogger("WEATHER CONTROLLER");
     private final WeatherService weatherService;
 
 
@@ -32,7 +35,6 @@ public class WeatherController {
         this.bucket = Bucket4j.builder()
                 .addLimit(limit)
                 .build();
-
         this.weatherService = weatherService;
     }
 
@@ -42,8 +44,10 @@ public class WeatherController {
      * Checks whether the request is allowed by consuming a token from the bucket.
      */
     @GetMapping("/weather/cities/{id}")
-    public ResponseEntity getTemperaturesForFiveDays(@PathVariable("id") long cityId) throws JsonProcessingException {
+    public ResponseEntity getTemperaturesForFiveDays(@PathVariable("id") long cityId) throws IOException {
+        log.info("controller is called");
         if (bucket.tryConsume(1)) {
+            log.info("token is consumed");
             return ResponseEntity.ok(weatherService.getTempForFiveDays(cityId));
         }
         return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS).build();
@@ -55,7 +59,7 @@ public class WeatherController {
      */
     @GetMapping("/weather/summary")
     public ResponseEntity summaryCities(@RequestParam("unit") String unit, @RequestParam("temperature") int temperature,
-                                        @RequestParam("cities") List<Long> citiesId) throws JsonProcessingException {
+                                        @RequestParam("cities") List<Long> citiesId) throws IOException {
         if (bucket.tryConsume(1)) {
             return ResponseEntity.ok(weatherService.getSummaryCities(unit, temperature, citiesId));
         }

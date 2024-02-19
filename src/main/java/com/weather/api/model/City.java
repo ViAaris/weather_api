@@ -1,5 +1,6 @@
 package com.weather.api.model;
 
+
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -7,34 +8,28 @@ import lombok.NoArgsConstructor;
 import lombok.ToString;
 
 @Data
-@NoArgsConstructor
 @AllArgsConstructor
-public class Weather {
+@NoArgsConstructor
+public class City {
 
-    private Double temp;
-
+    private long id;
+    private String name;
 //    @JsonIgnore
 //    @ToString.Exclude
-//    private Double feels_like;
+//    private Object coord;
 //    @JsonIgnore
 //    @ToString.Exclude
-//    private Float temp_min;
+//    private String country;
 //    @JsonIgnore
 //    @ToString.Exclude
-//    private Float temp_max;
+//    private int population;
 //    @JsonIgnore
 //    @ToString.Exclude
-//    private Integer pressure;
+//    private int timezone;
 //    @JsonIgnore
 //    @ToString.Exclude
-//    private Float sea_level;
+//    private int sunrise;
 //    @JsonIgnore
 //    @ToString.Exclude
-//    private Float grnd_level;
-//    @JsonIgnore
-//    @ToString.Exclude
-//    private Integer humidity;
-//    @JsonIgnore
-//    @ToString.Exclude
-//    private Float temp_kf;
+//    private int sunset;
 }

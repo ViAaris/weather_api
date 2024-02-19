@@ -1,12 +1,17 @@
 package com.weather.api.service;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.weather.api.model.Weather;
+import com.weather.api.dto.WeatherDTO;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 
+import java.io.IOException;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.logging.Logger;
 
 @Service
@@ -22,10 +27,10 @@ public class WeatherService {
     /**
      * converts kelvins either to fahrenheit or celsius depending on unit parameter
      */
-    public static double convertFromKelvins(double kelvins, String unit){
-        switch (unit){
+    public static double convertFromKelvins(double kelvins, String unit) {
+        switch (unit) {
             case "fahrenheit":
-                return Math.round(kelvins * 9/5 - 459.67);
+                return Math.round(kelvins * 9 / 5 - 459.67);
             case "celsius":
                 return Math.round(kelvins - 273.15);
         }
@@ -36,12 +41,15 @@ public class WeatherService {
     /**
      * The method operates Weather objects for the required city:
      * puts to a map values of the temperature (in celsius) for the next 5 days
+     *
      * @return the map of 5 objects (key=date, value=temperature)
      */
-    public HashMap<String, Double> getTempForFiveDays(long cityId) throws JsonProcessingException {
-        List<Weather> weathers = openWeatherApiService.getParsedForecast(cityId);
+    @Cacheable("weather")
+    public HashMap<String, Double> getTempForFiveDays(long cityId) throws IOException {
+        log.info("cacheable weathers service is called (temp  for 5 days)");
+        List<WeatherDTO> weathers = openWeatherApiService.getWeatherDTOs(cityId);
         HashMap<String, Double> fiveDaysTemps = new LinkedHashMap<>();
-        for (Weather weather : weathers) {
+        for (WeatherDTO weather : weathers) {
             LocalDateTime date = weather.getDate();
             if ((date.getDayOfMonth() != LocalDate.now().getDayOfMonth())) {
                 fiveDaysTemps.put(weather.formattedDate(), convertFromKelvins(weather.getTemperature(), "celsius"));
@@ -54,10 +62,10 @@ public class WeatherService {
      * The method operates Weather objects for the required city: extracts a Weather object of the next day, 12am
      * @return the weather object
      */
-    public Weather getNextDay(long cityId) throws JsonProcessingException {
-        Weather nextDay = null;
-        List<Weather> weathers = openWeatherApiService.getParsedForecast(cityId);
-        for (Weather weather : weathers) {
+    public WeatherDTO getNextDay(long cityId) throws IOException {
+        WeatherDTO nextDay = null;
+        List<WeatherDTO> weathers = openWeatherApiService.getWeatherDTOs(cityId);
+        for (WeatherDTO weather : weathers) {
             LocalDateTime date = weather.getDate();
             if ((date.getDayOfMonth() == LocalDate.now().getDayOfMonth() + 1)
                     &&
@@ -77,10 +85,10 @@ public class WeatherService {
      * gets the temperature of the next day for each of the cities and compares it with the temperature param.
      * @return the list of the strings - names of the cities where the next day temperature is higher than the temperature param.
      */
-    public List<String> getSummaryCities(String unit, int temperature, List<Long> citiesId) throws JsonProcessingException {
+    public List<String> getSummaryCities(String unit, int temperature, List<Long> citiesId) throws IOException {
         List<String> cities = new ArrayList<>();
         for(Long id : citiesId){
-            Weather nextDay = getNextDay(id);
+            WeatherDTO nextDay = getNextDay(id);
             double nextDayTemp = convertFromKelvins(nextDay.getTemperature(), unit);
             if(nextDayTemp > temperature){
                 cities.add(nextDay.getCityName());
